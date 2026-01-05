@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Cocina | ComputerForms</title>
+    <style>
+        :root {
+            --primary-dark: #2c3e50; /* Azul CF */
+            --accent-red: #e74c3c;    /* Rojo CF */
+            --accent-yellow: #f1c40f; /* Amarillo CF */
+            --bg-body: #f4f7f6;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            padding: 20px;
+            color: var(--primary-dark);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-dark);
+            padding: 15px 30px;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-area img {
+            height: 50px;
+            background: white;
+            border-radius: 5px;
+            padding: 2px;
+        }
+
+        .title-area h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #reloj-cocina {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-yellow);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+
+        .tarjeta-registro {
+            background: var(--white);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 35px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 10px solid var(--primary-dark);
+            transition: transform 0.3s ease;
+        }
+
+        /* La tarjeta del que acaba de marcar */
+        .tarjeta-registro:first-child {
+            border-left-color: var(--accent-red);
+            background: #fff5f5;
+            transform: scale(1.01);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.15);
+        }
+
+        .nombre-empleado {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .info-secundaria {
+            text-align: right;
+        }
+
+        .id-badge {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .hora-marca {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-red);
+        }
+
+        .badge-nuevo {
+            background: var(--accent-red);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-dark); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <img src="logo.png" alt="Logo CF"> <div class="title-area">
+                <h1>Servicio de Comedor</h1>
+                <small style="color: var(--accent-yellow);">MONITOR DE COCINA</small>
+            </div>
+        </div>
+        <div id="reloj-cocina">00:00:00</div>
+    </header>
+
+    <div id="panelCocina" class="grid-container">
+        </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbz4_SRjDUYlkoc1ZpGWgXPxcUV1t_nNGJPwxXk82e_hIfSD9JRgxP0vjPecCPYa53btzQ/exec';
+
+        function actualizarReloj() {
+            const now = new Date();
+            document.getElementById('reloj-cocina').innerText = now.toLocaleTimeString('es-MX', {hour12: false});
+        }
+        setInterval(actualizarReloj, 1000);
+
+        async function cargarRegistrosCocina() {
+            try {
+                const res = await fetch(scriptURL);
+                const registros = await res.json();
+                const panel = document.getElementById('panelCocina');
+                
+                const ultimos = registros.slice(0, 8);
+                
+                panel.innerHTML = ultimos.map((reg, index) => `
+                    <div class="tarjeta-registro">
+                        <div class="nombre-empleado">
+                            ${reg.nombre.toUpperCase()}
+                            ${index === 0 ? '<span class="badge-nuevo">ÚLTIMO MARCADO</span>' : ''}
+                        </div>
+                        <div class="info-secundaria">
+                            <span class="id-badge">ID: ${reg.id}</span>
+                            <span class="hora-marca">${formatearHora(reg.hora)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Error cargando panel de cocina", e);
+            }
+        }
+
+        function formatearHora(hora) {
+            if (!hora) return "00:00";
+            const h = new Date(hora);
+            return !isNaN(h) ? h.toLocaleTimeString('es-MX', {hour12:false, hour:'2-digit', minute:'2-digit'}) : String(hora).substring(0,5);
+        }
+
+        setInterval(cargarRegistrosCocina, 5000);
+        cargarRegistrosCocina();
+    </script>
+</body>
+</html>
